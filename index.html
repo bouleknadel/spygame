@@ -133,6 +133,7 @@
         .card-container {
             perspective: 1000px;
             margin: 30px 0;
+            min-height: 300px;
         }
 
         .card {
@@ -142,6 +143,13 @@
             transform-style: preserve-3d;
             transition: transform 0.6s;
             cursor: pointer;
+            opacity: 1;
+            transition: transform 0.6s, opacity 0.3s;
+        }
+
+        .card.hidden-transition {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .card.flipped {
@@ -535,12 +543,12 @@
             const currentPlayer = gameState.players[currentIndex];
             const isSpy = currentIndex === gameState.spyIndex;
 
-            // إعادة تعيين البطاقة
+            // إعادة تعيين البطاقة (إزالة الانقلاب)
             const card = document.getElementById('card');
             card.classList.remove('flipped');
             gameState.isCardFlipped = false;
 
-            // تحديث المحتوى
+            // تحديث المحتوى أولاً قبل أن تكون البطاقة مرئية
             document.getElementById('currentPlayerName').textContent = currentPlayer;
             document.getElementById('progress').textContent = `اللاعب ${currentIndex + 1} / ${gameState.players.length}`;
 
@@ -548,6 +556,7 @@
             const secretWordEl = document.getElementById('secretWord');
             const themeInfo = document.getElementById('themeInfo');
 
+            // تحديث محتوى الجهة الخلفية (هذا يحدث بينما البطاقة مخفية)
             if (isSpy) {
                 cardBack.classList.add('spy');
                 secretWordEl.textContent = '🕵️ أنت الجاسوس';
@@ -584,15 +593,30 @@
         }
 
         function nextPlayer() {
-            gameState.currentPlayerIndex++;
+            // إخفاء البطاقة أولاً
+            const card = document.getElementById('card');
+            const nextButton = document.getElementById('nextButton');
+            
+            card.classList.add('hidden-transition');
+            nextButton.classList.add('hidden');
+            
+            // الانتقال للاعب التالي بعد إخفاء البطاقة تماماً
+            setTimeout(() => {
+                gameState.currentPlayerIndex++;
 
-            if (gameState.currentPlayerIndex >= gameState.players.length) {
-                // جميع اللاعبين شاهدوا بطاقاتهم، الانتقال لشاشة المناقشة
-                showDiscussionScreen();
-            } else {
-                // الانتقال للاعب التالي
-                updateCard();
-            }
+                if (gameState.currentPlayerIndex >= gameState.players.length) {
+                    // جميع اللاعبين شاهدوا بطاقاتهم، الانتقال لشاشة المناقشة
+                    showDiscussionScreen();
+                } else {
+                    // تحديث البطاقة للاعب التالي
+                    updateCard();
+                    
+                    // إظهار البطاقة مرة أخرى بعد تحديث المحتوى
+                    setTimeout(() => {
+                        card.classList.remove('hidden-transition');
+                    }, 50);
+                }
+            }, 400); // الانتظار حتى تختفي البطاقة تماماً
         }
 
         function showDiscussionScreen() {
